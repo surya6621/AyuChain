@@ -6,6 +6,8 @@ const {
     findUserForLogin
 } = require("../models/userModel");
 
+const generateToken = require("../utils/jwt");
+
 const register = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
@@ -82,8 +84,11 @@ const login = async (req, res) => {
             });
         }
 
+        const token = generateToken(user);
+
         res.status(200).json({
             message: "Login successful",
+            token,
             user: {
                 id: user.id,
                 name: user.name,
