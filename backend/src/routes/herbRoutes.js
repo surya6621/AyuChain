@@ -3,7 +3,8 @@ const express = require("express");
 const {
     addHerb,
     getMyHerbs,
-    getHerb
+    getHerb,
+    updateStatus
 } = require("../controllers/herbController");
 
 const {
@@ -17,5 +18,7 @@ router.post("/", authenticate, addHerb);
 router.get("/my", authenticate, getMyHerbs);
 
 router.get("/:id", authenticate, getHerb);
+
+router.patch("/:id/status", authenticate, updateStatus);
 
 module.exports = router;
