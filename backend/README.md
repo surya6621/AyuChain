@@ -324,12 +324,48 @@ Response:
 ## Get Herb by ID
 
 **GET** `/api/herbs/:id`
+## Update Herb Status
+
+**PATCH** `/api/herbs/:id/status`
+
+Authentication: JWT required.
+
+Request:
+
+```json
+{
+  "status": "collected"
+}
 
 Example:
 
 ```text
-GET /api/herbs/1
+PATCH /api/herbs/1/status
 ```
+Response:
+{
+  "message": "Herb status updated successfully",
+  "herb": {
+    "id": 1,
+    "name": "Ashwagandha",
+    "status": "collected"
+  }
+}
+
+Example statuses:
+
+registered
+collected
+laboratory
+manufacturing
+ready
+delivered
+
+
+Also update your **Current API Summary** table by adding this row:
+
+```text
+| PATCH | `/api/herbs/:id/status` | JWT | Update herb supply-chain status |
 
 # Frontend Integration
 

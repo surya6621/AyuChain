@@ -40,8 +40,21 @@ const findHerbById = async (id) => {
     return result.rows[0];
 };
 
+const updateHerbStatus = async (id, status) => {
+    const result = await pool.query(
+        `UPDATE herbs
+         SET status = $1
+         WHERE id = $2
+         RETURNING id, name, description, origin, farmer_id, status, created_at`,
+        [status, id]
+    );
+
+    return result.rows[0];
+};
+
 module.exports = {
     createHerb,
     getHerbsByFarmer,
-    findHerbById
+    findHerbById,
+    updateHerbStatus
 };

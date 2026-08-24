@@ -1,7 +1,8 @@
 const {
     createHerb,
     getHerbsByFarmer,
-    findHerbById
+    findHerbById,
+    updateHerbStatus
 } = require("../models/herbModel");
 
 const addHerb = async (req, res) => {
@@ -79,8 +80,46 @@ const getHerb = async (req, res) => {
     }
 };
 
+const updateStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        if (!status) {
+            return res.status(400).json({
+                message: "Status is required"
+            });
+        }
+
+        const herb = await findHerbById(req.params.id);
+
+        if (!herb) {
+            return res.status(404).json({
+                message: "Herb not found"
+            });
+        }
+
+        const updatedHerb = await updateHerbStatus(
+            req.params.id,
+            status
+        );
+
+        res.status(200).json({
+            message: "Herb status updated successfully",
+            herb: updatedHerb
+        });
+
+    } catch (error) {
+        console.error("Update herb status error:", error);
+
+        res.status(500).json({
+            message: "Failed to update herb status"
+        });
+    }
+};
+
 module.exports = {
     addHerb,
     getMyHerbs,
-    getHerb
+    getHerb,
+    updateStatus
 };
