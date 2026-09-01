@@ -5,6 +5,11 @@ const {
     updateHerbStatus
 } = require("../models/herbModel");
 
+const {
+    addTrackingRecord,
+    getTrackingHistory
+} = require("../models/trackingModel");
+
 const addHerb = async (req, res) => {
     try {
         const {
@@ -103,6 +108,12 @@ const updateStatus = async (req, res) => {
             status
         );
 
+        await addTrackingRecord(
+            req.params.id,
+            status,
+            req.user.id
+        );
+
         res.status(200).json({
             message: "Herb status updated successfully",
             herb: updatedHerb
@@ -117,9 +128,42 @@ const updateStatus = async (req, res) => {
     }
 };
 
+const getHerbTracking = async (req, res) => {
+    try {
+        const herb = await findHerbById(req.params.id);
+
+        if (!herb) {
+            return res.status(404).json({
+                message: "Herb not found"
+            });
+        }
+
+        const tracking = await getTrackingHistory(
+            req.params.id
+        );
+
+        res.status(200).json({
+            herb: {
+                id: herb.id,
+                name: herb.name,
+                currentStatus: herb.status
+            },
+            tracking
+        });
+
+    } catch (error) {
+        console.error("Get herb tracking error:", error);
+
+        res.status(500).json({
+            message: "Failed to get herb tracking history"
+        });
+    }
+};
+
 module.exports = {
     addHerb,
     getMyHerbs,
     getHerb,
-    updateStatus
+    updateStatus,
+    getHerbTracking
 };

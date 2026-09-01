@@ -4,7 +4,8 @@ const {
     addHerb,
     getMyHerbs,
     getHerb,
-    updateStatus
+    updateStatus,
+    getHerbTracking
 } = require("../controllers/herbController");
 
 const {
@@ -16,6 +17,8 @@ const router = express.Router();
 router.post("/", authenticate, addHerb);
 
 router.get("/my", authenticate, getMyHerbs);
+
+router.get("/:id/tracking", authenticate, getHerbTracking);
 
 router.get("/:id", authenticate, getHerb);
 
