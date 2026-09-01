@@ -73,7 +73,7 @@ PORT=5000
 DATABASE_URL=YOUR_NEON_POSTGRESQL_CONNECTION_STRING
 JWT_SECRET=YOUR_JWT_SECRET
 
-Do not commit .env to GitHub.
+Never commit .env to GitHub.
 
 Start the Backend
 
@@ -246,7 +246,7 @@ Response:
   }
 }
 
-Use the returned JWT token for protected APIs.
+The frontend must save the returned token and send it as a Bearer token when calling protected APIs.
 
 Protected APIs
 
@@ -367,40 +367,278 @@ The tracking history records status changes and the user responsible for each up
 
 Frontend Integration
 
-Local backend URL:
+The frontend connects to the backend through HTTP REST APIs.
+
+The basic connection is:
+
+Next.js Frontend
+       |
+       | HTTP request
+       ↓
+http://localhost:5000
+       |
+       ↓
+Express Routes
+       |
+       ↓
+Controllers
+       |
+       ↓
+PostgreSQL / Neon
+
+1. Backend Must Be Running
+
+Start the backend first:
+
+cd backend
+npm run dev
+
+The backend must be available at:
 
 http://localhost:5000
 
-For protected requests:
+The frontend does not connect directly to PostgreSQL. The frontend communicates with the Express API, and the backend communicates with PostgreSQL.
 
-const response = await fetch(
-    "http://localhost:5000/api/herbs/1/tracking",
-    {
-        headers: {
-            Authorization: `Bearer ${token}`
+2. Frontend API URL
+
+For a Next.js frontend, create:
+
+frontend/.env.local
+
+Add:
+
+NEXT_PUBLIC_API_URL=http://localhost:5000
+
+Restart the Next.js development server after changing .env.local.
+
+3. Create a Reusable API Helper
+
+Create this file in the frontend:
+
+src/lib/api.js
+
+Code:
+
+const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+export async function apiRequest(
+    endpoint,
+    options = {}
+) {
+    const token =
+        typeof window !== "undefined"
+            ? localStorage.getItem("token")
+            : null;
+
+    const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(
+        `${API_URL}${endpoint}`,
+        {
+            ...options,
+            headers
         }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || "API request failed"
+        );
+    }
+
+    return data;
+}
+
+Now frontend pages can call the backend without repeating the full URL and JWT header.
+
+4. Register User from Frontend
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/auth/register",
+    {
+        method: "POST",
+        body: JSON.stringify({
+            name: "Test Farmer",
+            email: "farmer1@test.com",
+            password: "123456",
+            role: "farmer"
+        })
     }
 );
 
-const data = await response.json();
+console.log(data);
 
-Update herb status:
+5. Login from Frontend
 
-const response = await fetch(
-    "http://localhost:5000/api/herbs/1/status",
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/auth/login",
+    {
+        method: "POST",
+        body: JSON.stringify({
+            email: "farmer1@test.com",
+            password: "123456"
+        })
+    }
+);
+
+localStorage.setItem("token", data.token);
+localStorage.setItem(
+    "user",
+    JSON.stringify(data.user)
+);
+
+After login, the token is automatically added to protected API requests by apiRequest().
+
+6. Get Current User
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/users/profile"
+);
+
+console.log(data.user);
+
+7. Register a Herb
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/herbs",
+    {
+        method: "POST",
+        body: JSON.stringify({
+            name: "Ashwagandha",
+            description: "Traditional Ayurvedic herb",
+            origin: "Rajasthan"
+        })
+    }
+);
+
+console.log(data.herb);
+
+The backend automatically gets the authenticated user's ID from the JWT.
+
+8. Get My Herbs
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/herbs/my"
+);
+
+console.log(data.herbs);
+
+9. Get One Herb
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/herbs/1"
+);
+
+console.log(data.herb);
+
+10. Update Herb Status
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/herbs/1/status",
     {
         method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-        },
         body: JSON.stringify({
             status: "laboratory"
         })
     }
 );
 
-const data = await response.json();
+console.log(data.herb);
+
+The backend updates the current status and creates a tracking-history record.
+
+11. Get Herb Tracking History
+
+import { apiRequest } from "@/lib/api";
+
+const data = await apiRequest(
+    "/api/herbs/1/tracking"
+);
+
+console.log(data.tracking);
+
+Example result:
+
+registered
+    ↓
+collected
+    ↓
+laboratory
+
+12. Logout
+
+Remove the stored authentication data:
+
+localStorage.removeItem("token");
+localStorage.removeItem("user");
+
+Then redirect the user to the login page.
+
+Frontend and Backend Connection Example
+
+A complete login-to-herb flow looks like this:
+
+1. User opens Next.js frontend
+          ↓
+2. User enters email and password
+          ↓
+3. Frontend POST /api/auth/login
+          ↓
+4. Backend verifies password
+          ↓
+5. Backend returns JWT token
+          ↓
+6. Frontend stores token
+          ↓
+7. Frontend sends:
+   Authorization: Bearer TOKEN
+          ↓
+8. Backend JWT middleware verifies token
+          ↓
+9. Controller processes request
+          ↓
+10. Model communicates with PostgreSQL
+          ↓
+11. Backend returns JSON
+          ↓
+12. Frontend displays the result
+
+CORS
+
+If the frontend and backend run on different ports, the backend must allow the frontend origin through CORS.
+
+Typical local setup:
+
+Frontend: http://localhost:3000
+Backend:  http://localhost:5000
+
+The backend should have CORS enabled for the frontend origin.
+
+If the browser reports a CORS error, check the CORS configuration in src/app.js.
 
 Current API Summary
 
@@ -514,9 +752,11 @@ Backend Architecture
 
 Frontend
    ↓
+REST API
+   ↓
 Routes
    ↓
-Middleware
+JWT Middleware
    ↓
 Controllers
    ↓
@@ -551,3 +791,5 @@ Bearer token
 JWT middleware
   ↓
 Protected API
+
+The README should be updated whenever the current API, database structure, authentication, roles, or frontend integration changes.
