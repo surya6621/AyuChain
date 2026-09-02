@@ -1,0 +1,1093 @@
+{
+  "info": {
+    "name": "AyuChain Backend \u2014 IPFS, QR & Security",
+    "_postman_id": "ayuchain-member4-collection",
+    "description": "Member 4 modules: IPFS uploads via Pinata, QR generation, public verification, and the security layer.\n\n## Setup\n1. Set the `baseUrl` variable (default `http://localhost:5000`).\n2. Run **Auth > Register** once per role, then **Auth > Login**. The login test script stores the JWT into `{{farmerToken}}`, `{{laboratoryToken}}`, `{{manufacturerToken}}` etc. automatically.\n3. For the upload requests, pick a local file in the request's Body > form-data `file` field \u2014 Postman cannot store file paths in an exported collection.\n\nThe **Security Tests** folder reproduces the cases in `docs/TESTING.md`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "farmerToken",
+      "value": ""
+    },
+    {
+      "key": "laboratoryToken",
+      "value": ""
+    },
+    {
+      "key": "manufacturerToken",
+      "value": ""
+    },
+    {
+      "key": "customerToken",
+      "value": ""
+    },
+    {
+      "key": "herbId",
+      "value": "1"
+    },
+    {
+      "key": "batchCode",
+      "value": ""
+    },
+    {
+      "key": "cid",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Public. Returns 200 with db:connected, or 503 with db:disconnected. Used as the Render health check path."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is ok', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register farmer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public. Rate limited to 10 requests / 15 min. Role 'admin' is rejected here by design.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Farmer\",\n  \"email\": \"farmer1@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"farmer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register lab",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Lab\",\n  \"email\": \"lab1@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"laboratory\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register manufacturer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Manufacturer\",\n  \"email\": \"mfg1@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"manufacturer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"cust1@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login (saves token by role)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Change the email to log in as another role. The test script saves the JWT into {{<role>Token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"farmer1@test.com\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set('token', data.token);",
+                  "    pm.collectionVariables.set(data.user.role + 'Token', data.token);",
+                  "    console.log('Saved token for role: ' + data.user.role);",
+                  "}",
+                  "pm.test('no password in response', function () {",
+                  "    pm.expect(pm.response.text()).to.not.include('\"password\"');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Upload (IPFS)",
+      "item": [
+        {
+          "name": "Upload herb image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{farmerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/herb-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "herb-image"
+              ]
+            },
+            "description": "Auth: JWT. Role: farmer. Rate limit 20/15min. Pick a file in the Body tab before sending.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "jpeg / png / webp, max 5MB"
+                },
+                {
+                  "key": "herbId",
+                  "value": "{{herbId}}",
+                  "type": "text",
+                  "description": "Optional. Links the image to a herb so it appears in /api/verify",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.upload && data.upload.cid) {",
+                  "    pm.collectionVariables.set('cid', data.upload.cid);",
+                  "    console.log('Saved cid: ' + data.upload.cid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload lab report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{laboratoryToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/lab-report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "lab-report"
+              ]
+            },
+            "description": "Auth: JWT. Role: laboratory. Rate limit 20/15min.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "PDF only, max 5MB"
+                },
+                {
+                  "key": "herbId",
+                  "value": "{{herbId}}",
+                  "type": "text",
+                  "description": "Optional",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "passed",
+                  "type": "text",
+                  "description": "pending | passed | failed",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.upload && data.upload.cid) {",
+                  "    pm.collectionVariables.set('cid', data.upload.cid);",
+                  "    console.log('Saved cid: ' + data.upload.cid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve CID (gateway redirect)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/{{cid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "{{cid}}"
+              ]
+            },
+            "description": "Public. 302 redirect to the Pinata gateway. Only CIDs this backend uploaded resolve \u2014 404 otherwise."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batch & QR",
+      "item": [
+        {
+          "name": "Create batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{manufacturerToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/qr/batches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr",
+                "batches"
+              ]
+            },
+            "description": "Auth: JWT. Role: manufacturer or admin. Saves the generated batch_code into {{batchCode}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"herbId\": 1,\n  \"productName\": \"Ashwagandha Churna 100g\",\n  \"quantity\": \"500 units\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.batch && data.batch.batch_code) {",
+                  "    pm.collectionVariables.set('batchCode', data.batch.batch_code);",
+                  "    console.log('Saved batchCode: ' + data.batch.batch_code);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate QR for batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{manufacturerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/qr/generate/{{batchCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr",
+                "generate",
+                "{{batchCode}}"
+              ]
+            },
+            "description": "Auth: JWT. Role: manufacturer or admin. Generates the PNG, pins it to IPFS, and stores the CID on the batch."
+          }
+        },
+        {
+          "name": "Get QR image (PNG)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/qr/{{batchCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr",
+                "{{batchCode}}"
+              ]
+            },
+            "description": "Public. Returns a raw image/png. Usable directly as an <img src>."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Verification",
+      "item": [
+        {
+          "name": "Verify batch (customer QR scan)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/verify/{{batchCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "verify",
+                "{{batchCode}}"
+              ]
+            },
+            "description": "Public, no auth. Returns the full traceability chain: farmer, herb, image CIDs, lab report CIDs + status, manufacturer, blockchain tx hash, tracking timeline."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('no sensitive fields exposed', function () {",
+                  "    const text = pm.response.text();",
+                  "    pm.expect(text).to.not.include('\"email\"');",
+                  "    pm.expect(text).to.not.include('\"phone\"');",
+                  "    pm.expect(text).to.not.include('\"password\"');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Security Tests",
+      "item": [
+        {
+          "name": "01 \u2014 No token (expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/herb-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "herb-image"
+              ]
+            },
+            "description": "TESTING.md case 1.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "any image"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 \u2014 Wrong role: customer uploads herb image (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/herb-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "herb-image"
+              ]
+            },
+            "description": "TESTING.md case 3.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "any image"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 \u2014 Wrong role: farmer uploads lab report (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{farmerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/lab-report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "lab-report"
+              ]
+            },
+            "description": "TESTING.md case 4.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "any pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 \u2014 Oversized file (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{farmerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/herb-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "herb-image"
+              ]
+            },
+            "description": "TESTING.md case 5.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a file larger than 5MB"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 \u2014 Wrong mimetype (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{farmerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/herb-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "herb-image"
+              ]
+            },
+            "description": "TESTING.md case 6.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a .exe or .txt file"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 \u2014 SQL injection in body (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "TESTING.md case 11. Blocked by validation; pg parameterization is the second layer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"' OR 1=1 --\",\n  \"password\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 \u2014 SQL injection in param (expect 400)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{farmerToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/herbs/1;DROP TABLE users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "herbs",
+                "1;DROP TABLE users"
+              ]
+            },
+            "description": "TESTING.md case 12."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 \u2014 Register as admin (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "TESTING.md case 14. Privilege escalation at signup is blocked.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Attacker\",\n  \"email\": \"attacker@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 \u2014 Unknown route (expect 404 JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "does-not-exist"
+              ]
+            },
+            "description": "TESTING.md case 19."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 json', function () { pm.response.to.have.status(404); pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "20 \u2014 Open IPFS proxy (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+              ]
+            },
+            "description": "TESTING.md case 20. A valid CID this backend never uploaded must not redirect."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "21 \u2014 Malformed CID (expect 400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/not-a-cid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload",
+                "not-a-cid"
+              ]
+            },
+            "description": "TESTING.md case 21."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "22 \u2014 Malformed batch code (expect 400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/verify/!!bad!!",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "verify",
+                "!!bad!!"
+              ]
+            },
+            "description": "TESTING.md case 22."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 \u2014 Auth rate limit (run 11x, expect 429)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "TESTING.md case 9. Use the Postman Runner with 11 iterations; the 11th must return 429.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody@test.com\",\n  \"password\": \"wrongpass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.info.iterationCount > 10 && pm.info.iteration === 10) {",
+                  "    pm.test('429 on the 11th attempt', function () { pm.response.to.have.status(429); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
