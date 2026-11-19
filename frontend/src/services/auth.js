@@ -1,0 +1,1 @@
+import{api}from"./api";import{saveSession}from"./session";export async function login(data){return saveSession(await api("/api/auth/login",{method:"POST",body:JSON.stringify(data)}))}export function register(data){return api("/api/auth/register",{method:"POST",body:JSON.stringify(data)})}

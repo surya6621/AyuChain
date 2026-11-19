@@ -1,0 +1,1 @@
+const symbols=["🌱","◈","▣","✦"];export default function Journey({t}){return <section className="journey" id="journey"><p className="eyebrow">{t.journeyEyebrow}</p><h2>{t.journeyTitle}</h2><div className="steps">{t.steps.map((x,i)=><article key={x.title}><i>0{i+1}</i><span>{symbols[i]}</span><h3>{x.title}</h3><p>{x.text}</p></article>)}</div></section>}
