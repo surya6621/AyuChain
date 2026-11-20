@@ -9,6 +9,8 @@ const {
     addLabReport,
     approveBatch,
     updateStatus
+    updateStatus,
+    getHerbTracking
 } = require("../controllers/herbController");
 
 const {
@@ -16,6 +18,14 @@ const {
     authorizeRoles
 } = require("../middleware/authMiddleware");
 const { uploadLabReport } = require("../config/upload");
+
+const { validate } = require("../middleware/validate.middleware");
+
+const {
+    createHerbRules,
+    herbIdRules,
+    updateStatusRules
+} = require("../validators/herbValidator");
 
 const router = express.Router();
 
@@ -37,7 +47,14 @@ router.post("/:id/lab-report", authenticate, authorizeRoles("laboratory"), (req,
 router.post("/:id/approve", authenticate, authorizeRoles("manufacturer", "admin"), approveBatch);
 
 router.get("/:id", authenticate, getHerb);
+router.post("/", authenticate, createHerbRules, validate, addHerb);
 
-router.patch("/:id/status", authenticate, updateStatus);
+router.get("/my", authenticate, getMyHerbs);
+
+router.get("/:id/tracking", authenticate, herbIdRules, validate, getHerbTracking);
+
+router.get("/:id", authenticate, herbIdRules, validate, getHerb);
+
+router.patch("/:id/status", authenticate, updateStatusRules, validate, updateStatus);
 
 module.exports = router;
