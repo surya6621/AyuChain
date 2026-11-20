@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const helmet = require("helmet");
 
 const authRoutes = require("./routes/authRoutes");
@@ -44,6 +45,8 @@ app.use(cors({
             return callback(null, true);
         }
 
+app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
         callback(new Error("Origin not allowed by CORS"));
     },
     credentials: true
@@ -56,7 +59,9 @@ app.use(generalLimiter);
 app.get("/", (req, res) => {
     res.json({
         message: "AyuChain Backend API",
-        status: "running"
+        status: "running",
+        databaseConfigured: Boolean(process.env.DATABASE_URL),
+        demoVerification: "/api/herbs/public/DEMO-AYU-001"
     });
 });
 

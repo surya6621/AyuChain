@@ -1,0 +1,5 @@
+PORT=5000
+
+DATABASE_URL=postgresql://neondb_owner:npg_0wYjX9nUremd@ep-raspy-flower-azld38kj.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+
+JWT_SECRET=ayuchain_development_secret

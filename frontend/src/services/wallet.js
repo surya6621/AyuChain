@@ -1,0 +1,1 @@
+export async function connectWallet(){if(!window.ethereum)throw Error("MetaMask is required to connect a wallet. Install it, then try again.");return(await window.ethereum.request({method:"eth_requestAccounts"}))[0]}

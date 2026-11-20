@@ -308,6 +308,38 @@ Example:
 
 GET /api/herbs/1
 
+**GET** `/api/herbs/:id`
+
+## Public Product Verification
+
+**GET** `/api/herbs/public/:id`
+
+No authentication is required. This endpoint is intended for a customer QR-code scan and returns only public batch details: name, description, origin, current status, and registration date. Certificate availability is returned separately for the future IPFS certificate module.
+
+## Worker Queue
+
+**GET** `/api/herbs/queue`
+
+Authentication: JWT required.
+
+The queue is selected by role:
+
+- `farmer`: their own batches
+- `collector`: batches with status `registered`
+- `laboratory`: batches with status `collected`
+- `manufacturer`: batches with status `laboratory`
+- `admin`: all batches
+
+## Upload Laboratory Report
+
+**POST** `/api/herbs/:id/lab-report`
+
+Authentication: JWT required. Allowed role: `laboratory`.
+
+Send `multipart/form-data` with a `report` file. Allowed formats are PDF, JPG, and PNG; the maximum upload size is 10 MB. The batch must have status `collected`. On successful upload, the report is stored and the batch status changes to `laboratory`.
+
+The customer verification endpoint returns an available laboratory-report link after upload.
+## Update Herb Status
 Update Herb Status
 
 PATCH /api/herbs/:id/status
@@ -334,6 +366,8 @@ laboratory
 manufacturing
 ready
 delivered
+
+Status changes are restricted by role: collectors can set `collected`, laboratories can set `laboratory`, manufacturers can set `manufacturing`, `ready`, or `delivered`, and admins can set any supported status. Herb registration is restricted to farmers and admins.
 
 Get Herb Tracking History
 
@@ -680,6 +714,20 @@ GET
 
 JWT
 
+| Method | Endpoint | Authentication | Purpose |
+|---|---|---|---|
+| GET | `/` | No | Backend status |
+| POST | `/api/auth/register` | No | Register user |
+| POST | `/api/auth/login` | No | Login and receive JWT |
+| GET | `/api/users/profile` | JWT | Get current user |
+| GET | `/api/admin/dashboard` | JWT + Admin | Admin dashboard |
+| POST | `/api/herbs` | JWT | Register herb |
+| GET | `/api/herbs/my` | JWT | Get user's herbs |
+| GET | `/api/herbs/:id` | JWT | Get herb by ID |
+| GET | `/api/herbs/public/:id` | No | Public QR product verification |
+| GET | `/api/herbs/queue` | JWT | Role-specific worker queue |
+| PATCH | `/api/herbs/:id/status` | JWT + role | Update herb supply-chain status |
+| POST | `/api/herbs/:id/lab-report` | JWT + laboratory | Upload a PDF/JPG/PNG lab report, maximum 10 MB |
 Get current user
 
 GET

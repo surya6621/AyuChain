@@ -1,7 +1,10 @@
 const express = require("express");
 
 const {
-    getAdminDashboard
+    getAdminDashboard,
+    listUsers,
+    listBatches,
+    changeUserRole
 } = require("../controllers/adminController");
 
 const {
@@ -17,5 +20,9 @@ router.get(
     authorizeRoles("admin"),
     getAdminDashboard
 );
+
+router.get("/users", authenticate, authorizeRoles("admin"), listUsers);
+router.get("/batches", authenticate, authorizeRoles("admin"), listBatches);
+router.patch("/users/:id/role", authenticate, authorizeRoles("admin"), changeUserRole);
 
 module.exports = router;
